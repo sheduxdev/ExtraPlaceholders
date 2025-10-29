@@ -1,5 +1,5 @@
 name: ExtraPlaceholders
-version: v0.1
+version: v0.2
 main: dev.shedux.extraplaceholders.ExtraPlaceholders
 api-version: 1.13
 load: POSTWORLD
