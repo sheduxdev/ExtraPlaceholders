@@ -11,66 +11,77 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Handles server-related placeholders with multi-locale date formatting.
- *
- * <p>This handler provides functionality for:
- * <ul>
- *   <li>Date formatting with 30+ supported locales</li>
- *   <li>Customizable date patterns</li>
- *   <li>Fallback to default locale for invalid inputs</li>
- * </ul>
+ * Handles server-related placeholders with multi-locale date formatting
+ * Supports 30+ locales with customizable date patterns
  *
  * @author sheduxdev
  * @since 1.0.0
  */
-public class ServerPlaceholderHandler implements PlaceholderHandler {
+public final class ServerPlaceholderHandler implements PlaceholderHandler {
 
     private static final String DATE_COMMAND = "date";
+    private static final int MIN_DATE_ARGS = 2;
+    private static final int LOCALE_ARG_INDEX = 2;
+
     private static final Map<String, Locale> SUPPORTED_LOCALES = initializeSupportedLocales();
 
     @Override
     public String handle(OfflinePlayer player, List<String> args) {
-        if (args.size() > 1 && DATE_COMMAND.equalsIgnoreCase(args.get(1))) {
+        if (!hasMinimumArgs(args, MIN_DATE_ARGS)) {
+            return null;
+        }
+
+        if (DATE_COMMAND.equalsIgnoreCase(args.get(1))) {
             return handleDatePlaceholder(args);
         }
+
         return null;
     }
 
     /**
-     * Handles date placeholder requests with optional locale specification.
+     * Handles date placeholder requests with optional locale specification
      *
      * @param args the placeholder arguments
      * @return formatted date string
      */
     private String handleDatePlaceholder(List<String> args) {
-        if (args.size() < 3) {
-            return formatCurrentDate(getDefaultLocale());
-        }
-
-        Locale locale = parseLocale(args.get(2))
+        Locale locale = getLocaleFromArgs(args)
                 .orElse(getDefaultLocale());
 
         return formatCurrentDate(locale);
     }
 
     /**
-     * Parses a locale string to a Locale object.
+     * Extracts locale from arguments if present
+     *
+     * @param args the placeholder arguments
+     * @return Optional containing the Locale if valid
+     */
+    private Optional<Locale> getLocaleFromArgs(List<String> args) {
+        if (args.size() <= LOCALE_ARG_INDEX) {
+            return Optional.empty();
+        }
+
+        return parseLocale(args.get(LOCALE_ARG_INDEX));
+    }
+
+    /**
+     * Parses a locale string to a Locale object
      *
      * @param localeInput the locale identifier
      * @return Optional containing the Locale if valid
      */
     private Optional<Locale> parseLocale(String localeInput) {
-        String normalized = localeInput.toLowerCase().trim();
-
-        if (!SUPPORTED_LOCALES.containsKey(normalized)) {
+        if (localeInput == null || localeInput.isEmpty()) {
             return Optional.empty();
         }
 
-        return Optional.of(SUPPORTED_LOCALES.get(normalized));
+        String normalized = localeInput.toLowerCase().trim();
+        return Optional.ofNullable(SUPPORTED_LOCALES.get(normalized));
     }
 
     /**
-     * Formats the current date using the specified locale.
+     * Formats the current date using the specified locale
      *
      * @param locale the locale to use for formatting
      * @return formatted date string
@@ -86,74 +97,75 @@ public class ServerPlaceholderHandler implements PlaceholderHandler {
     }
 
     /**
-     * Gets the default locale from configuration.
+     * Gets the default locale from configuration
      *
      * @return configured default Locale
      */
     private Locale getDefaultLocale() {
         String defaultLocale = Configuration.DATE.DEFAULT_LOCALE.toLowerCase();
-        return SUPPORTED_LOCALES.getOrDefault(defaultLocale, Locale.of("en", "US"));
+        return SUPPORTED_LOCALES.getOrDefault(defaultLocale, Locale.US);
     }
 
     /**
-     * Initializes the map of supported locales.
+     * Initializes the map of supported locales
+     * Uses immutable map for thread safety and performance
      *
      * @return immutable map of locale identifiers to Locale objects
      */
     private static Map<String, Locale> initializeSupportedLocales() {
         return Map.ofEntries(
                 // Turkish
-                Map.entry("tr", Locale.of("tr", "TR")),
-                Map.entry("tr-tr", Locale.of("tr", "TR")),
+                Map.entry("tr", new Locale("tr", "TR")),
+                Map.entry("tr-tr", new Locale("tr", "TR")),
 
                 // English variants
-                Map.entry("en", Locale.of("en", "US")),
-                Map.entry("en-us", Locale.of("en", "US")),
-                Map.entry("en-gb", Locale.of("en", "GB")),
+                Map.entry("en", Locale.US),
+                Map.entry("en-us", Locale.US),
+                Map.entry("en-gb", Locale.UK),
 
                 // European languages
-                Map.entry("de", Locale.of("de", "DE")),
-                Map.entry("de-de", Locale.of("de", "DE")),
-                Map.entry("fr", Locale.of("fr", "FR")),
-                Map.entry("fr-fr", Locale.of("fr", "FR")),
-                Map.entry("es", Locale.of("es", "ES")),
-                Map.entry("es-es", Locale.of("es", "ES")),
-                Map.entry("it", Locale.of("it", "IT")),
-                Map.entry("it-it", Locale.of("it", "IT")),
-                Map.entry("pt", Locale.of("pt", "PT")),
-                Map.entry("pt-pt", Locale.of("pt", "PT")),
-                Map.entry("pt-br", Locale.of("pt", "BR")),
-                Map.entry("nl", Locale.of("nl", "NL")),
-                Map.entry("nl-nl", Locale.of("nl", "NL")),
-                Map.entry("pl", Locale.of("pl", "PL")),
-                Map.entry("pl-pl", Locale.of("pl", "PL")),
+                Map.entry("de", Locale.GERMANY),
+                Map.entry("de-de", Locale.GERMANY),
+                Map.entry("fr", Locale.FRANCE),
+                Map.entry("fr-fr", Locale.FRANCE),
+                Map.entry("es", new Locale("es", "ES")),
+                Map.entry("es-es", new Locale("es", "ES")),
+                Map.entry("it", Locale.ITALY),
+                Map.entry("it-it", Locale.ITALY),
+                Map.entry("pt", new Locale("pt", "PT")),
+                Map.entry("pt-pt", new Locale("pt", "PT")),
+                Map.entry("pt-br", new Locale("pt", "BR")),
+                Map.entry("nl", new Locale("nl", "NL")),
+                Map.entry("nl-nl", new Locale("nl", "NL")),
+                Map.entry("pl", new Locale("pl", "PL")),
+                Map.entry("pl-pl", new Locale("pl", "PL")),
 
                 // Nordic languages
-                Map.entry("sv", Locale.of("sv", "SE")),
-                Map.entry("sv-se", Locale.of("sv", "SE")),
-                Map.entry("no", Locale.of("no", "NO")),
-                Map.entry("no-no", Locale.of("no", "NO")),
-                Map.entry("da", Locale.of("da", "DK")),
-                Map.entry("da-dk", Locale.of("da", "DK")),
-                Map.entry("fi", Locale.of("fi", "FI")),
-                Map.entry("fi-fi", Locale.of("fi", "FI")),
+                Map.entry("sv", new Locale("sv", "SE")),
+                Map.entry("sv-se", new Locale("sv", "SE")),
+                Map.entry("no", new Locale("no", "NO")),
+                Map.entry("no-no", new Locale("no", "NO")),
+                Map.entry("da", new Locale("da", "DK")),
+                Map.entry("da-dk", new Locale("da", "DK")),
+                Map.entry("fi", new Locale("fi", "FI")),
+                Map.entry("fi-fi", new Locale("fi", "FI")),
 
                 // Slavic languages
-                Map.entry("ru", Locale.of("ru", "RU")),
-                Map.entry("ru-ru", Locale.of("ru", "RU")),
+                Map.entry("ru", new Locale("ru", "RU")),
+                Map.entry("ru-ru", new Locale("ru", "RU")),
 
                 // Asian languages
-                Map.entry("ja", Locale.of("ja", "JP")),
-                Map.entry("ja-jp", Locale.of("ja", "JP")),
-                Map.entry("zh", Locale.of("zh", "CN")),
-                Map.entry("zh-cn", Locale.of("zh", "CN")),
-                Map.entry("zh-tw", Locale.of("zh", "TW")),
-                Map.entry("ko", Locale.of("ko", "KR")),
-                Map.entry("ko-kr", Locale.of("ko", "KR")),
+                Map.entry("ja", Locale.JAPAN),
+                Map.entry("ja-jp", Locale.JAPAN),
+                Map.entry("zh", Locale.CHINA),
+                Map.entry("zh-cn", Locale.CHINA),
+                Map.entry("zh-tw", Locale.TAIWAN),
+                Map.entry("ko", Locale.KOREA),
+                Map.entry("ko-kr", Locale.KOREA),
 
                 // Middle Eastern languages
-                Map.entry("ar", Locale.of("ar", "SA")),
-                Map.entry("ar-sa", Locale.of("ar", "SA"))
+                Map.entry("ar", new Locale("ar", "SA")),
+                Map.entry("ar-sa", new Locale("ar", "SA"))
         );
     }
 }

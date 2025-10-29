@@ -6,7 +6,8 @@ import lombok.Getter;
 import lombok.experimental.UtilityClass;
 
 /**
- * Initializes and manages plugin trackers
+ * Initializes and manages plugin dependency trackers
+ * Provides centralized access to all tracker instances
  *
  * @author sheduxdev
  * @since 1.0.0
@@ -22,6 +23,7 @@ public class Initializer {
 
     /**
      * Initializes all dependency trackers
+     * Should be called once during plugin startup
      */
     public void initialize() {
         bolt = new BoltTracker();

@@ -14,227 +14,48 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Handles Phoenix-related placeholders for staff status information.
- *
- * <p>This handler provides functionality for:
- * <ul>
- *   <li>Vanish status detection</li>
- *   <li>Mod mode status detection</li>
- *   <li>Combined status display with configurable prefixes</li>
- *   <li>Rank expiration time with configurable time units</li>
- * </ul>
+ * Handles Phoenix-related placeholders for staff status and rank information
+ * Provides vanish status, mod mode detection, and rank expiration tracking
  *
  * @author sheduxdev
  * @since 1.0.0
  */
-public class PhoenixPlaceholderHandler implements PlaceholderHandler {
+public final class PhoenixPlaceholderHandler implements PlaceholderHandler {
+
+    private static final String STATUS_COMMAND = "status";
+    private static final String EXPIRATION_COMMAND = "expiration";
+    private static final int MIN_ARGS = 2;
+    private static final int COMMAND_INDEX = 1;
 
     @Override
     public String handle(OfflinePlayer player, List<String> args) {
         PhoenixTracker tracker = Initializer.getPhoenix();
 
-        if (!isPhoenixAvailable(tracker)) {
+        if (!tracker.isApiAvailable()) {
             return Configuration.MESSAGES.PHOENIX_NOT_AVAILABLE;
         }
 
-        if (args.size() > 1 && "status".equalsIgnoreCase(args.get(1))) {
-            return getUserStatus(tracker, player);
+        if (!hasMinimumArgs(args, MIN_ARGS)) {
+            return null;
         }
 
-        if (args.size() > 1 && "expiration".equalsIgnoreCase(args.get(1))) {
-            return getExpirationDate(tracker, player);
-        }
+        String command = args.get(COMMAND_INDEX).toLowerCase();
 
-        return null;
+        return switch (command) {
+            case STATUS_COMMAND -> handleStatusPlaceholder(tracker, player);
+            case EXPIRATION_COMMAND -> handleExpirationPlaceholder(tracker, player);
+            default -> null;
+        };
     }
 
     /**
-     * Gets the formatted expiration date for the player's rank.
-     *
-     * @param tracker the Phoenix tracker
-     * @param player the player
-     * @return formatted expiration string
-     */
-    private String getExpirationDate(PhoenixTracker tracker, OfflinePlayer player) {
-        if (!(player instanceof Player onlinePlayer)) {
-            return Configuration.MESSAGES.PHOENIX_NOT_AVAILABLE;
-        }
-
-        IProfile profile = tracker.getApi().getProfileHandler().getProfile(onlinePlayer.getUniqueId());
-        if (profile == null) {
-            return Configuration.MESSAGES.PHOENIX_NOT_AVAILABLE;
-        }
-
-        IGrant grant = profile.getBestGrant();
-        if (grant == null) {
-            return Configuration.MESSAGES.PHOENIX_NOT_AVAILABLE;
-        }
-
-        long remainingMs = grant.getRemainingDuration();
-
-        // Permanent rank
-        if (remainingMs == -1 || remainingMs == Long.MAX_VALUE) {
-            return Configuration.PHOENIX.PERMANENT_RANK;
-        }
-
-        return formatDuration(remainingMs);
-    }
-
-    /**
-     * Formats duration based on configuration settings.
-     * Cascades disabled units into the next available unit.
-     *
-     * @param durationMs duration in milliseconds
-     * @return formatted duration string
-     */
-    private String formatDuration(long durationMs) {
-        DurationComponents components = calculateDuration(durationMs);
-        return buildDurationString(components);
-    }
-
-    /**
-     * Calculates duration components with cascading logic.
-     */
-    private DurationComponents calculateDuration(long durationMs) {
-        long remaining = durationMs;
-
-        // Calculate base values
-        long totalSeconds = TimeUnit.MILLISECONDS.toSeconds(remaining);
-        long totalMinutes = TimeUnit.MILLISECONDS.toMinutes(remaining);
-        long totalHours = TimeUnit.MILLISECONDS.toHours(remaining);
-        long totalDays = TimeUnit.MILLISECONDS.toDays(remaining);
-
-        // Approximate months and years (30 days = 1 month, 365 days = 1 year)
-        long totalMonths = totalDays / 30;
-        long totalYears = totalDays / 365;
-
-        // Start from the highest enabled unit and cascade down
-        long years = 0, months = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.YEAR) {
-            years = totalYears;
-            remaining -= TimeUnit.DAYS.toMillis(years * 365);
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.MONTH) {
-            months = TimeUnit.MILLISECONDS.toDays(remaining) / 30;
-            remaining -= TimeUnit.DAYS.toMillis(months * 30);
-        } else if (!Configuration.PHOENIX.RANK_EXPIRY.YEAR) {
-            // If years are disabled, include years in months calculation
-            months = totalMonths;
-            remaining = durationMs - TimeUnit.DAYS.toMillis(months * 30);
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.DAY) {
-            days = TimeUnit.MILLISECONDS.toDays(remaining);
-            remaining -= TimeUnit.DAYS.toMillis(days);
-        } else if (!Configuration.PHOENIX.RANK_EXPIRY.MONTH && !Configuration.PHOENIX.RANK_EXPIRY.YEAR) {
-            // If both years and months are disabled, show total days
-            days = totalDays;
-            remaining = durationMs - TimeUnit.DAYS.toMillis(days);
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.HOUR) {
-            hours = TimeUnit.MILLISECONDS.toHours(remaining);
-            remaining -= TimeUnit.HOURS.toMillis(hours);
-        } else if (!Configuration.PHOENIX.RANK_EXPIRY.DAY) {
-            // If days are disabled, show total hours
-            hours = totalHours;
-            remaining = durationMs - TimeUnit.HOURS.toMillis(hours);
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.MINUTES) {
-            minutes = TimeUnit.MILLISECONDS.toMinutes(remaining);
-            remaining -= TimeUnit.MINUTES.toMillis(minutes);
-        } else if (!Configuration.PHOENIX.RANK_EXPIRY.HOUR) {
-            // If hours are disabled, show total minutes
-            minutes = totalMinutes;
-            remaining = durationMs - TimeUnit.MINUTES.toMillis(minutes);
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.SECONDS) {
-            seconds = TimeUnit.MILLISECONDS.toSeconds(remaining);
-        } else if (!Configuration.PHOENIX.RANK_EXPIRY.MINUTES) {
-            // If minutes are disabled, show total seconds
-            seconds = totalSeconds;
-        }
-
-        return new DurationComponents(years, months, days, hours, minutes, seconds);
-    }
-
-    /**
-     * Builds the formatted duration string from components.
-     */
-    private String buildDurationString(DurationComponents components) {
-        StringBuilder result = new StringBuilder();
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.YEAR && components.years > 0) {
-            result.append(components.years)
-                    .append(components.years == 1 ?
-                            Configuration.PHOENIX.RANK_EXPIRY.YEAR_SINGULAR :
-                            Configuration.PHOENIX.RANK_EXPIRY.YEAR_PLURAL)
-                    .append(" ");
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.MONTH && components.months > 0) {
-            result.append(components.months)
-                    .append(components.months == 1 ?
-                            Configuration.PHOENIX.RANK_EXPIRY.MONTH_SINGULAR :
-                            Configuration.PHOENIX.RANK_EXPIRY.MONTH_PLURAL)
-                    .append(" ");
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.DAY && components.days > 0) {
-            result.append(components.days)
-                    .append(components.days == 1 ?
-                            Configuration.PHOENIX.RANK_EXPIRY.DAY_SINGULAR :
-                            Configuration.PHOENIX.RANK_EXPIRY.DAY_PLURAL)
-                    .append(" ");
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.HOUR && components.hours > 0) {
-            result.append(components.hours)
-                    .append(components.hours == 1 ?
-                            Configuration.PHOENIX.RANK_EXPIRY.HOUR_SINGULAR :
-                            Configuration.PHOENIX.RANK_EXPIRY.HOUR_PLURAL)
-                    .append(" ");
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.MINUTES && components.minutes > 0) {
-            result.append(components.minutes)
-                    .append(components.minutes == 1 ?
-                            Configuration.PHOENIX.RANK_EXPIRY.MINUTE_SINGULAR :
-                            Configuration.PHOENIX.RANK_EXPIRY.MINUTE_PLURAL)
-                    .append(" ");
-        }
-
-        if (Configuration.PHOENIX.RANK_EXPIRY.SECONDS && components.seconds > 0) {
-            result.append(components.seconds)
-                    .append(components.seconds == 1 ?
-                            Configuration.PHOENIX.RANK_EXPIRY.SECOND_SINGULAR :
-                            Configuration.PHOENIX.RANK_EXPIRY.SECOND_PLURAL)
-                    .append(" ");
-        }
-
-        String formatted = result.toString().trim();
-        return formatted.isEmpty() ? Configuration.PHOENIX.NO_TIME_REMAINING : formatted;
-    }
-
-    /**
-     * Checks if Phoenix API is available.
-     */
-    private boolean isPhoenixAvailable(PhoenixTracker tracker) {
-        return tracker.isPresent() && tracker.getApi() != null;
-    }
-
-    /**
-     * Gets the user status including vanished and mod mode indicators.
+     * Handles status placeholder (vanish/mod mode indicators)
      *
      * @param tracker the Phoenix tracker
      * @param player the player
      * @return formatted status string with prefixes
      */
-    private String getUserStatus(PhoenixTracker tracker, OfflinePlayer player) {
+    private String handleStatusPlaceholder(PhoenixTracker tracker, OfflinePlayer player) {
         if (!(player instanceof Player onlinePlayer)) {
             return Configuration.PHOENIX.DEFAULT_STATUS;
         }
@@ -245,7 +66,29 @@ public class PhoenixPlaceholderHandler implements PlaceholderHandler {
     }
 
     /**
-     * Gets the player profile from Phoenix API.
+     * Handles rank expiration placeholder
+     *
+     * @param tracker the Phoenix tracker
+     * @param player the player
+     * @return formatted expiration string
+     */
+    private String handleExpirationPlaceholder(PhoenixTracker tracker, OfflinePlayer player) {
+        if (!(player instanceof Player)) {
+            return Configuration.MESSAGES.PHOENIX_NOT_AVAILABLE;
+        }
+
+        return getPlayerProfile(tracker, player)
+                .flatMap(this::getBestGrant)
+                .map(this::formatGrantExpiration)
+                .orElse(Configuration.MESSAGES.PHOENIX_NOT_AVAILABLE);
+    }
+
+    /**
+     * Gets the player profile from Phoenix API safely
+     *
+     * @param tracker the Phoenix tracker
+     * @param player the player
+     * @return Optional containing the profile if found
      */
     private Optional<IProfile> getPlayerProfile(PhoenixTracker tracker, OfflinePlayer player) {
         try {
@@ -259,7 +102,47 @@ public class PhoenixPlaceholderHandler implements PlaceholderHandler {
     }
 
     /**
-     * Builds the status string with appropriate prefixes.
+     * Gets the best grant from profile safely
+     *
+     * @param profile the player profile
+     * @return Optional containing the grant if found
+     */
+    private Optional<IGrant> getBestGrant(IProfile profile) {
+        try {
+            return Optional.ofNullable(profile.getBestGrant());
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Formats grant expiration time
+     *
+     * @param grant the grant to format
+     * @return formatted expiration string
+     */
+    private String formatGrantExpiration(IGrant grant) {
+        long remainingMs = grant.getRemainingDuration();
+
+        if (isPermanentGrant(remainingMs)) {
+            return Configuration.PHOENIX.PERMANENT_RANK;
+        }
+
+        return formatDuration(remainingMs);
+    }
+
+    /**
+     * Checks if grant is permanent
+     *
+     * @param remainingMs remaining time in milliseconds
+     * @return true if grant is permanent
+     */
+    private boolean isPermanentGrant(long remainingMs) {
+        return remainingMs == -1 || remainingMs == Long.MAX_VALUE;
+    }
+
+    /**
+     * Builds the status string with appropriate prefixes
      *
      * @param profile the player profile
      * @param player the online player
@@ -276,18 +159,39 @@ public class PhoenixPlaceholderHandler implements PlaceholderHandler {
     }
 
     /**
-     * Determines the player's current status.
+     * Determines the player's current status
+     *
+     * @param profile the player profile
+     * @param player the online player
+     * @return PlayerStatus object containing status flags
      */
     private PlayerStatus determinePlayerStatus(IProfile profile, Player player) {
-        boolean isVanished = profile.isVanished();
-        boolean isModMode = checkModMode(player);
+        boolean isVanished = isPlayerVanished(profile);
+        boolean isModMode = isPlayerInModMode(player);
         return new PlayerStatus(isVanished, isModMode);
     }
 
     /**
-     * Checks if player is in mod mode safely.
+     * Checks if player is vanished safely
+     *
+     * @param profile the player profile
+     * @return true if player is vanished
      */
-    private boolean checkModMode(Player player) {
+    private boolean isPlayerVanished(IProfile profile) {
+        try {
+            return profile.isVanished();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks if player is in mod mode safely
+     *
+     * @param player the player
+     * @return true if player is in mod mode
+     */
+    private boolean isPlayerInModMode(Player player) {
         try {
             return BukkitAPI.isInModMode(player);
         } catch (Exception e) {
@@ -296,7 +200,10 @@ public class PhoenixPlaceholderHandler implements PlaceholderHandler {
     }
 
     /**
-     * Builds the prefix string based on status.
+     * Builds the prefix string based on status
+     *
+     * @param status the player status
+     * @return formatted prefix string
      */
     private String buildPrefixString(PlayerStatus status) {
         StringBuilder builder = new StringBuilder();
@@ -313,7 +220,137 @@ public class PhoenixPlaceholderHandler implements PlaceholderHandler {
     }
 
     /**
-     * Immutable record representing player status.
+     * Formats duration based on configuration settings with cascading
+     *
+     * @param durationMs duration in milliseconds
+     * @return formatted duration string
+     */
+    private String formatDuration(long durationMs) {
+        DurationComponents components = calculateDuration(durationMs);
+        return buildDurationString(components);
+    }
+
+    /**
+     * Calculates duration components with cascading logic
+     *
+     * @param durationMs duration in milliseconds
+     * @return DurationComponents containing all time units
+     */
+    private DurationComponents calculateDuration(long durationMs) {
+        long remaining = durationMs;
+
+        long totalSeconds = TimeUnit.MILLISECONDS.toSeconds(remaining);
+        long totalMinutes = TimeUnit.MILLISECONDS.toMinutes(remaining);
+        long totalHours = TimeUnit.MILLISECONDS.toHours(remaining);
+        long totalDays = TimeUnit.MILLISECONDS.toDays(remaining);
+        long totalMonths = totalDays / 30;
+        long totalYears = totalDays / 365;
+
+        long years = 0, months = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
+
+        if (Configuration.PHOENIX.RANK_EXPIRY.YEAR) {
+            years = totalYears;
+            remaining -= TimeUnit.DAYS.toMillis(years * 365);
+        }
+
+        if (Configuration.PHOENIX.RANK_EXPIRY.MONTH) {
+            months = TimeUnit.MILLISECONDS.toDays(remaining) / 30;
+            remaining -= TimeUnit.DAYS.toMillis(months * 30);
+        } else if (!Configuration.PHOENIX.RANK_EXPIRY.YEAR) {
+            months = totalMonths;
+            remaining = durationMs - TimeUnit.DAYS.toMillis(months * 30);
+        }
+
+        if (Configuration.PHOENIX.RANK_EXPIRY.DAY) {
+            days = TimeUnit.MILLISECONDS.toDays(remaining);
+            remaining -= TimeUnit.DAYS.toMillis(days);
+        } else if (!Configuration.PHOENIX.RANK_EXPIRY.MONTH && !Configuration.PHOENIX.RANK_EXPIRY.YEAR) {
+            days = totalDays;
+            remaining = durationMs - TimeUnit.DAYS.toMillis(days);
+        }
+
+        if (Configuration.PHOENIX.RANK_EXPIRY.HOUR) {
+            hours = TimeUnit.MILLISECONDS.toHours(remaining);
+            remaining -= TimeUnit.HOURS.toMillis(hours);
+        } else if (!Configuration.PHOENIX.RANK_EXPIRY.DAY) {
+            hours = totalHours;
+            remaining = durationMs - TimeUnit.HOURS.toMillis(hours);
+        }
+
+        if (Configuration.PHOENIX.RANK_EXPIRY.MINUTES) {
+            minutes = TimeUnit.MILLISECONDS.toMinutes(remaining);
+            remaining -= TimeUnit.MINUTES.toMillis(minutes);
+        } else if (!Configuration.PHOENIX.RANK_EXPIRY.HOUR) {
+            minutes = totalMinutes;
+            remaining = durationMs - TimeUnit.MINUTES.toMillis(minutes);
+        }
+
+        if (Configuration.PHOENIX.RANK_EXPIRY.SECONDS) {
+            seconds = TimeUnit.MILLISECONDS.toSeconds(remaining);
+        } else if (!Configuration.PHOENIX.RANK_EXPIRY.MINUTES) {
+            seconds = totalSeconds;
+        }
+
+        return new DurationComponents(years, months, days, hours, minutes, seconds);
+    }
+
+    /**
+     * Builds the formatted duration string from components
+     *
+     * @param components the duration components
+     * @return formatted duration string
+     */
+    private String buildDurationString(DurationComponents components) {
+        StringBuilder result = new StringBuilder();
+
+        appendTimeUnit(result, components.years(), Configuration.PHOENIX.RANK_EXPIRY.YEAR,
+                Configuration.PHOENIX.RANK_EXPIRY.YEAR_SINGULAR,
+                Configuration.PHOENIX.RANK_EXPIRY.YEAR_PLURAL);
+
+        appendTimeUnit(result, components.months(), Configuration.PHOENIX.RANK_EXPIRY.MONTH,
+                Configuration.PHOENIX.RANK_EXPIRY.MONTH_SINGULAR,
+                Configuration.PHOENIX.RANK_EXPIRY.MONTH_PLURAL);
+
+        appendTimeUnit(result, components.days(), Configuration.PHOENIX.RANK_EXPIRY.DAY,
+                Configuration.PHOENIX.RANK_EXPIRY.DAY_SINGULAR,
+                Configuration.PHOENIX.RANK_EXPIRY.DAY_PLURAL);
+
+        appendTimeUnit(result, components.hours(), Configuration.PHOENIX.RANK_EXPIRY.HOUR,
+                Configuration.PHOENIX.RANK_EXPIRY.HOUR_SINGULAR,
+                Configuration.PHOENIX.RANK_EXPIRY.HOUR_PLURAL);
+
+        appendTimeUnit(result, components.minutes(), Configuration.PHOENIX.RANK_EXPIRY.MINUTES,
+                Configuration.PHOENIX.RANK_EXPIRY.MINUTE_SINGULAR,
+                Configuration.PHOENIX.RANK_EXPIRY.MINUTE_PLURAL);
+
+        appendTimeUnit(result, components.seconds(), Configuration.PHOENIX.RANK_EXPIRY.SECONDS,
+                Configuration.PHOENIX.RANK_EXPIRY.SECOND_SINGULAR,
+                Configuration.PHOENIX.RANK_EXPIRY.SECOND_PLURAL);
+
+        String formatted = result.toString().trim();
+        return formatted.isEmpty() ? Configuration.PHOENIX.NO_TIME_REMAINING : formatted;
+    }
+
+    /**
+     * Appends a time unit to the result string if enabled and non-zero
+     *
+     * @param result the StringBuilder to append to
+     * @param value the time unit value
+     * @param enabled whether this unit is enabled in config
+     * @param singularLabel the singular form label
+     * @param pluralLabel the plural form label
+     */
+    private void appendTimeUnit(StringBuilder result, long value, boolean enabled,
+                                String singularLabel, String pluralLabel) {
+        if (enabled && value > 0) {
+            result.append(value)
+                    .append(value == 1 ? singularLabel : pluralLabel)
+                    .append(" ");
+        }
+    }
+
+    /**
+     * Immutable record representing player status flags
      */
     private record PlayerStatus(boolean isVanished, boolean isModMode) {
         boolean hasAnyStatus() {
@@ -322,7 +359,7 @@ public class PhoenixPlaceholderHandler implements PlaceholderHandler {
     }
 
     /**
-     * Immutable record representing duration components.
+     * Immutable record representing duration components
      */
     private record DurationComponents(
             long years,

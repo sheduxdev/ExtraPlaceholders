@@ -12,19 +12,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Utility class for message formatting and color processing.
- *
- * <p>Supports both legacy Minecraft color codes (&a, &c) and modern hex colors
- * with MiniMessage-like syntax (<#RRGGBB>). Also includes gradient support
- * for creating smooth color transitions in text.
- *
- * <p>Features:
- * <ul>
- *   <li>Legacy color code translation (&-codes)</li>
- *   <li>Hex color support for MC 1.16+ (<#RRGGBB>)</li>
- *   <li>Gradient color application (<gradient:#START:#END>text</gradient>)</li>
- *   <li>Automatic version detection and compatibility</li>
- * </ul>
+ * Utility class for message formatting and color processing
+ * Supports legacy codes, hex colors, and gradients for MC 1.16+
  *
  * @author sheduxdev
  * @since 1.0.0
@@ -36,11 +25,13 @@ public final class MessageUtil {
     private static final Pattern HEX_PATTERN = Pattern.compile("<#([A-Fa-f0-9]{6})>");
     private static final Pattern GRADIENT_PATTERN = Pattern.compile("<gradient:#([A-Fa-f0-9]{6}):#([A-Fa-f0-9]{6})>(.*?)</gradient>");
     private static final char COLOR_CHAR = '&';
+    private static final String COLOR_CODE_PREFIX = "§x";
+    private static final char COLOR_CODE_CHAR = '§';
 
     private static final boolean HEX_SUPPORTED = isHexSupported();
 
     /**
-     * Colorizes text with both legacy codes and hex colors.
+     * Colorizes text with both legacy codes and hex colors
      *
      * @param text the text to colorize
      * @return colorized text, or original if null/empty
@@ -59,7 +50,7 @@ public final class MessageUtil {
     }
 
     /**
-     * Colorizes a list of strings.
+     * Colorizes a list of strings
      *
      * @param texts the list of texts to colorize
      * @return colorized list, or null if input is null
@@ -74,7 +65,7 @@ public final class MessageUtil {
     }
 
     /**
-     * Sends a colorized message to a command sender.
+     * Sends a colorized message to a command sender
      *
      * @param sender the recipient
      * @param message the message to send
@@ -87,7 +78,7 @@ public final class MessageUtil {
     }
 
     /**
-     * Sends a multi-line message with placeholder replacements.
+     * Sends a multi-line message with placeholder replacements
      *
      * @param sender the recipient
      * @param message the message object containing lines
@@ -105,7 +96,7 @@ public final class MessageUtil {
     }
 
     /**
-     * Applies hex color codes using MiniMessage-like format.
+     * Applies hex color codes using MiniMessage-like format
      *
      * @param text the text to process
      * @return text with hex colors applied
@@ -125,7 +116,7 @@ public final class MessageUtil {
     }
 
     /**
-     * Applies gradient color effects to text.
+     * Applies gradient color effects to text
      *
      * @param text the text to process
      * @return text with gradients applied
@@ -148,7 +139,7 @@ public final class MessageUtil {
     }
 
     /**
-     * Creates a smooth color gradient across text.
+     * Creates a smooth color gradient across text
      *
      * @param text the text to apply gradient to
      * @param startHex the starting hex color
@@ -184,7 +175,7 @@ public final class MessageUtil {
     }
 
     /**
-     * Applies legacy Minecraft color codes.
+     * Applies legacy Minecraft color codes
      *
      * @param text the text to process
      * @return text with legacy colors applied
@@ -194,22 +185,25 @@ public final class MessageUtil {
     }
 
     /**
-     * Converts hex color to Minecraft color code.
+     * Converts hex color to Minecraft color code
      *
      * @param hex the hex color (without #)
      * @return color code string
      */
     private String convertHexToColorCode(String hex) {
         try {
-            net.md_5.bungee.api.ChatColor chatColor = net.md_5.bungee.api.ChatColor.of("#" + hex);
-            return chatColor.toString();
-        } catch (Exception | NoClassDefFoundError e) {
+            StringBuilder builder = new StringBuilder(COLOR_CODE_PREFIX);
+            for (char c : hex.toCharArray()) {
+                builder.append(COLOR_CODE_CHAR).append(c);
+            }
+            return builder.toString();
+        } catch (Exception e) {
             return "";
         }
     }
 
     /**
-     * Converts RGB values to Minecraft color code.
+     * Converts RGB values to Minecraft color code
      *
      * @param rgb the RGB color
      * @return color code string
@@ -218,13 +212,13 @@ public final class MessageUtil {
         try {
             String hex = String.format("%02x%02x%02x", rgb.r(), rgb.g(), rgb.b());
             return convertHexToColorCode(hex);
-        } catch (Exception | NoClassDefFoundError e) {
+        } catch (Exception e) {
             return "";
         }
     }
 
     /**
-     * Checks if the server supports hex colors (1.16+).
+     * Checks if the server supports hex colors (1.16+)
      *
      * @return true if hex colors are supported
      */
@@ -239,12 +233,15 @@ public final class MessageUtil {
     }
 
     /**
-     * Immutable record representing RGB color.
+     * Immutable record representing RGB color
      */
     private record RGB(int r, int g, int b) {
 
         /**
-         * Creates RGB from hex string.
+         * Creates RGB from hex string
+         *
+         * @param hex the hex color string
+         * @return RGB instance
          */
         static RGB fromHex(String hex) {
             int value = Integer.parseInt(hex, 16);
@@ -256,7 +253,11 @@ public final class MessageUtil {
         }
 
         /**
-         * Interpolates between this RGB and another.
+         * Interpolates between this RGB and another
+         *
+         * @param other the target RGB
+         * @param ratio the interpolation ratio (0.0 to 1.0)
+         * @return interpolated RGB
          */
         RGB interpolate(RGB other, double ratio) {
             int newR = (int) (r + ratio * (other.r - r));

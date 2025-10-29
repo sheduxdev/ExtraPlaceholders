@@ -4,8 +4,8 @@ pluginManagement {
         mavenCentral()
 
         maven {
-            name = "papermc"
-            url = "https://repo.papermc.io/repository/maven-public/"
+            name = "spigotmc"
+            url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
         }
 
         maven {
@@ -22,7 +22,6 @@ pluginManagement {
             name = "j4c0b3y"
             url = "https://repo.j4c0b3y.net/public/"
         }
-
     }
 }
 
@@ -42,8 +41,8 @@ dependencyResolutionManagement {
         mavenCentral()
 
         maven {
-            name = "papermc"
-            url = "https://repo.papermc.io/repository/maven-public/"
+            name = "spigotmc"
+            url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
         }
 
         maven {
@@ -60,7 +59,6 @@ dependencyResolutionManagement {
             name = "j4c0b3y"
             url = "https://repo.j4c0b3y.net/public/"
         }
-
     }
 }
 

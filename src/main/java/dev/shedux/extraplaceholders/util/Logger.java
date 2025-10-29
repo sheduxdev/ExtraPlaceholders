@@ -4,19 +4,20 @@ import dev.shedux.extraplaceholders.config.Configuration;
 import org.bukkit.ChatColor;
 
 /**
- * Custom logger for plugin messages
+ * Custom logger for plugin messages with configurable formatting
+ * Provides consistent logging with color-coded message types
  *
  * @author sheduxdev
  * @since 1.0.0
  */
-public class Logger {
+public final class Logger {
 
     private final String pluginName;
 
     /**
      * Creates a new logger instance
      *
-     * @param pluginName the name of the plugin
+     * @param pluginName the name of the plugin for log prefix
      */
     public Logger(String pluginName) {
         this.pluginName = pluginName;
@@ -50,15 +51,24 @@ public class Logger {
     }
 
     /**
-     * Internal log method
+     * Internal log method with color formatting
      *
-     * @param color the color code
+     * @param colorCode the color code for the message
      * @param message the message to log
      */
-    private void log(String color, String message) {
-        String prefix = Configuration.LOGGER.PREFIX.replace("<plugin>", pluginName);
-        String formatted = String.format("%s %s%s", prefix, color, message);
+    private void log(String colorCode, String message) {
+        String prefix = buildPrefix();
+        String formatted = String.format("%s %s%s", prefix, colorCode, message);
         System.out.println(colorize(formatted));
+    }
+
+    /**
+     * Builds the log prefix with plugin name
+     *
+     * @return formatted prefix string
+     */
+    private String buildPrefix() {
+        return Configuration.LOGGER.PREFIX.replace("<plugin>", pluginName);
     }
 
     /**

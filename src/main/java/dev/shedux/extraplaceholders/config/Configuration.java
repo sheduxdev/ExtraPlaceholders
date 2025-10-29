@@ -7,12 +7,19 @@ import java.io.File;
 
 /**
  * Configuration manager for ExtraPlaceholders plugin
+ * Provides centralized access to all configuration values
  *
  * @author sheduxdev
  * @since 1.0.0
  */
 public class Configuration extends StaticConfig {
 
+    /**
+     * Creates a new configuration instance
+     *
+     * @param folder the plugin data folder
+     * @param handler the config handler
+     */
     public Configuration(File folder, ConfigHandler handler) {
         super(new File(folder, "config.yml"), handler);
     }

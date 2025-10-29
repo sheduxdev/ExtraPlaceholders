@@ -12,7 +12,6 @@ import net.j4c0b3y.api.command.bukkit.BukkitCommandHandler;
 import net.j4c0b3y.api.command.execution.locale.CommandLocale;
 import net.j4c0b3y.api.config.ConfigHandler;
 import net.j4c0b3y.api.config.StaticConfig;
-import org.apache.maven.model.PluginConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -28,6 +27,9 @@ import java.util.List;
  */
 public final class ExtraPlaceholders extends JavaPlugin {
 
+    private static final String PLACEHOLDERAPI_NAME = "PlaceholderAPI";
+    private static final String PLUGIN_NAME = "ExtraPlaceholders";
+
     @Getter
     private static ExtraPlaceholders instance;
 
@@ -38,43 +40,57 @@ public final class ExtraPlaceholders extends JavaPlugin {
 
     /**
      * Called when the plugin is enabled
-     * Initializes configuration, trackers, expansion, and commands
+     * Initializes all components in proper order
      */
     @Override
     public void onEnable() {
         instance = this;
-        logger = new Logger("ExtraPlaceholders");
+        logger = new Logger(PLUGIN_NAME);
 
-        logger.info(Configuration.MESSAGES.PLUGIN_ENABLED
-                .replace("<version>", getPluginMeta().getVersion()));
+        logPluginEnabled();
 
-        initializeConfiguration();
+        if (!initializeConfiguration()) {
+            disablePlugin();
+            return;
+        }
+
         initializeTrackers();
-        registerExpansion();
-        registerCommands();
 
-        logger.success(Configuration.MESSAGES.PLUGIN_ENABLED
-                .replace("<version>", getPluginMeta().getVersion()));
+        if (!registerExpansion()) {
+            disablePlugin();
+            return;
+        }
+
+        registerCommands();
+        logPluginReady();
     }
 
     /**
      * Called when the plugin is disabled
-     * Unregisters the PlaceholderAPI expansion
+     * Cleans up resources
      */
     @Override
     public void onDisable() {
         unregisterExpansion();
-        logger.info(Configuration.MESSAGES.PLUGIN_DISABLED);
+        logPluginDisabled();
     }
 
     /**
      * Initializes the configuration system
+     *
+     * @return true if initialization successful
      */
-    private void initializeConfiguration() {
-        File folder = getDataFolder();
-        configHandler = new ConfigHandler(getLogger());
-        Configuration configuration = new Configuration(folder, configHandler);
-        configuration.load();
+    private boolean initializeConfiguration() {
+        try {
+            File folder = getDataFolder();
+            configHandler = new ConfigHandler(getLogger());
+            Configuration configuration = new Configuration(folder, configHandler);
+            configuration.load();
+            return true;
+        } catch (Exception e) {
+            logger.error("Failed to initialize configuration: " + e.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -86,20 +102,28 @@ public final class ExtraPlaceholders extends JavaPlugin {
 
     /**
      * Registers the PlaceholderAPI expansion
+     *
+     * @return true if registration successful
      */
-    private void registerExpansion() {
-        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") == null) {
+    private boolean registerExpansion() {
+        if (!isPlaceholderAPIPresent()) {
             logger.error(Configuration.MESSAGES.PLACEHOLDER_API_NOT_FOUND);
-            getServer().getPluginManager().disablePlugin(this);
-            return;
+            return false;
         }
 
-        expansion = new ExtraPlaceholdersExpansion(this);
+        try {
+            expansion = new ExtraPlaceholdersExpansion(this);
 
-        if (expansion.register()) {
-            logger.success(Configuration.MESSAGES.EXPANSION_REGISTERED);
-        } else {
-            logger.error(Configuration.MESSAGES.EXPANSION_FAILED);
+            if (expansion.register()) {
+                logger.success(Configuration.MESSAGES.EXPANSION_REGISTERED);
+                return true;
+            } else {
+                logger.error(Configuration.MESSAGES.EXPANSION_FAILED);
+                return false;
+            }
+        } catch (Exception e) {
+            logger.error("Failed to register expansion: " + e.getMessage());
+            return false;
         }
     }
 
@@ -108,7 +132,11 @@ public final class ExtraPlaceholders extends JavaPlugin {
      */
     private void unregisterExpansion() {
         if (expansion != null) {
-            expansion.unregister();
+            try {
+                expansion.unregister();
+            } catch (Exception e) {
+                logger.error("Failed to unregister expansion: " + e.getMessage());
+            }
         }
     }
 
@@ -116,14 +144,70 @@ public final class ExtraPlaceholders extends JavaPlugin {
      * Registers plugin commands
      */
     private void registerCommands() {
-        CommandHandler commandHandler = new BukkitCommandHandler(this);
-        commandHandler.setLocale(new CommandLocale() {
+        try {
+            CommandHandler commandHandler = new BukkitCommandHandler(this);
+            commandHandler.setLocale(createCommandLocale());
+            commandHandler.register(new MainCommand(this));
+        } catch (Exception e) {
+            logger.error("Failed to register commands: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Creates command locale with custom messages
+     *
+     * @return configured CommandLocale
+     */
+    private CommandLocale createCommandLocale() {
+        return new CommandLocale() {
             @Override
             public List<String> getNoPermission() {
-                return Collections.singletonList(MessageUtil.colorize(Configuration.MESSAGES.NO_PERMISSION));
+                return Collections.singletonList(
+                        MessageUtil.colorize(Configuration.MESSAGES.NO_PERMISSION)
+                );
             }
-        });
-        commandHandler.register(new MainCommand(this));
+        };
+    }
+
+    /**
+     * Checks if PlaceholderAPI is present
+     *
+     * @return true if PlaceholderAPI is loaded
+     */
+    private boolean isPlaceholderAPIPresent() {
+        return getServer().getPluginManager().getPlugin(PLACEHOLDERAPI_NAME) != null;
+    }
+
+    /**
+     * Disables the plugin
+     */
+    private void disablePlugin() {
+        getServer().getPluginManager().disablePlugin(this);
+    }
+
+    /**
+     * Logs plugin enabled message
+     */
+    private void logPluginEnabled() {
+        String message = Configuration.MESSAGES.PLUGIN_ENABLED
+                .replace("<version>", getDescription().getVersion());
+        logger.info(message);
+    }
+
+    /**
+     * Logs plugin ready message
+     */
+    private void logPluginReady() {
+        String message = Configuration.MESSAGES.PLUGIN_ENABLED
+                .replace("<version>", getDescription().getVersion());
+        logger.success(message);
+    }
+
+    /**
+     * Logs plugin disabled message
+     */
+    private void logPluginDisabled() {
+        logger.info(Configuration.MESSAGES.PLUGIN_DISABLED);
     }
 
     /**
@@ -133,7 +217,9 @@ public final class ExtraPlaceholders extends JavaPlugin {
      */
     public static long reloadConfigurations() {
         long startTime = System.currentTimeMillis();
+
         configHandler.getRegistered().forEach(StaticConfig::load);
+
         return System.currentTimeMillis() - startTime;
     }
 }
