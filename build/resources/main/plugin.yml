@@ -1,7 +1,8 @@
-name: SoyluPlaceholders
+name: ExtraPlaceholders
 version: v0.1
-main: network.soylu.soyluplaceholders.SoyluPlaceholders
-api-version: 1.21
-load: STARTUP
+main: dev.shedux.extraplaceholders.ExtraPlaceholders
+api-version: 1.13
+load: POSTWORLD
 authors: [ sheduxdev ]
-depend: [PlaceholderAPI, Retention, voicechat]
+depend: [PlaceholderAPI]
+softdepend: [Retention]

@@ -2,6 +2,7 @@ name: ${name}
 version: ${version}
 main: dev.shedux.extraplaceholders.ExtraPlaceholders
 api-version: ${apiVersion}
-load: STARTUP
+load: POSTWORLD
 authors: [ sheduxdev ]
-depend: [PlaceholderAPI, Retention, voicechat]
+depend: [PlaceholderAPI]
+softdepend: [Retention]
