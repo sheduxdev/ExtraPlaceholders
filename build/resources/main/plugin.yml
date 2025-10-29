@@ -1,0 +1,7 @@
+name: SoyluPlaceholders
+version: v0.1
+main: network.soylu.soyluplaceholders.SoyluPlaceholders
+api-version: 1.21
+load: STARTUP
+authors: [ sheduxdev ]
+depend: [PlaceholderAPI, Retention, voicechat]
