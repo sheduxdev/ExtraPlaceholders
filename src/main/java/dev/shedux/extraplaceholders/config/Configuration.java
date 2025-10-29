@@ -76,6 +76,47 @@ public class Configuration extends StaticConfig {
         public static String DEFAULT_STATUS = "&f";
         public static String VANISHED_PREFIX = "<#9e9e9e>[⚗] ";
         public static String MOD_MODE_PREFIX = "<#ffc430>[⚙] ";
+
+        @Comment({
+                "Rank Expiration Messages",
+                "Message shown for permanent ranks"
+        })
+        public static String PERMANENT_RANK = "&aPermanent";
+        public static String NO_TIME_REMAINING = "&c0s";
+
+        /**
+         * Rank expiration time unit configuration
+         */
+        public static class RANK_EXPIRY {
+            @Comment({
+                    "Time Unit Configuration",
+                    "Set to false to cascade that unit into the next available unit",
+                    "Example: If YEAR and MONTH are false, a '1 year 5 days' rank becomes '370 days'",
+                    "Cascading order: Years -> Months -> Days -> Hours -> Minutes -> Seconds"
+            })
+            public static boolean YEAR = true;
+            public static boolean MONTH = true;
+            public static boolean DAY = true;
+            public static boolean HOUR = true;
+            public static boolean MINUTES = true;
+            public static boolean SECONDS = true;
+
+            @Comment("Singular Time Unit Labels")
+            public static String YEAR_SINGULAR = " Year";
+            public static String MONTH_SINGULAR = " Month";
+            public static String DAY_SINGULAR = " Day";
+            public static String HOUR_SINGULAR = " Hour";
+            public static String MINUTE_SINGULAR = " Minute";
+            public static String SECOND_SINGULAR = " Second";
+
+            @Comment("Plural Time Unit Labels")
+            public static String YEAR_PLURAL = " Years";
+            public static String MONTH_PLURAL = " Months";
+            public static String DAY_PLURAL = " Days";
+            public static String HOUR_PLURAL = " Hours";
+            public static String MINUTE_PLURAL = " Minutes";
+            public static String SECOND_PLURAL = " Seconds";
+        }
     }
 
     /**

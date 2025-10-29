@@ -20,6 +20,7 @@ A powerful PlaceholderAPI expansion that provides custom placeholders for [Bolt]
 - **Match Management**: Real-time match winner/loser tracking for solo, team, and FFA matches
 - **Kit Information**: Dynamic kit rule checking for any Bolt kit
 - **Staff Tools**: Vanish and mod-mode status indicators
+- **Rank Expiration**: Configurable rank expiration time display with cascading time units
 - **Performance**: Optimized code with minimal overhead
 - **Flexible**: Works with or without optional dependencies
 
@@ -77,6 +78,15 @@ A powerful PlaceholderAPI expansion that provides custom placeholders for [Bolt]
 | Placeholder | Example Result | Description |
 |------------|----------------|-------------|
 | `%extraplaceholders_phoenix_status%` | `[⚗] [⚙]` | Shows staff status (vanish/mod mode) |
+| `%extraplaceholders_phoenix_expiration%` | `1 Year 5 Days 3 Hours` | Shows rank expiration time with configurable units |
+
+#### Rank Expiration Features
+- **Cascading Time Units**: Disabled units automatically convert to the next available unit
+    - Example: With `YEAR: false` and `MONTH: false`, "1 year 5 days" becomes "370 Days"
+- **Fully Configurable**: Enable/disable any time unit (Years, Months, Days, Hours, Minutes, Seconds)
+- **Custom Labels**: Customize singular and plural forms for each time unit
+- **Smart Display**: Only shows non-zero values for cleaner output
+- **Permanent Rank Support**: Configurable message for permanent ranks
 
 ## 🎨 Configuration
 
@@ -118,6 +128,38 @@ PHOENIX:
   DEFAULT_STATUS: '&f'
   VANISHED_PREFIX: '<#9e9e9e>[⚗] '
   MOD_MODE_PREFIX: '<#ffc430>[⚙] '
+  
+  # Rank Expiration Messages
+  PERMANENT_RANK: '&aPermanent'
+  NO_TIME_REMAINING: '&c0s'
+  
+  RANK_EXPIRY:
+    # Time Unit Configuration
+    # Set to false to cascade that unit into the next available unit
+    # Example: If YEAR and MONTH are false, a '1 year 5 days' rank becomes '370 days'
+    # Cascading order: Years -> Months -> Days -> Hours -> Minutes -> Seconds
+    YEAR: true
+    MONTH: true
+    DAY: true
+    HOUR: true
+    MINUTES: true
+    SECONDS: true
+    
+    # Singular Time Unit Labels
+    YEAR_SINGULAR: ' Year'
+    MONTH_SINGULAR: ' Month'
+    DAY_SINGULAR: ' Day'
+    HOUR_SINGULAR: ' Hour'
+    MINUTE_SINGULAR: ' Minute'
+    SECOND_SINGULAR: ' Second'
+    
+    # Plural Time Unit Labels
+    YEAR_PLURAL: ' Years'
+    MONTH_PLURAL: ' Months'
+    DAY_PLURAL: ' Days'
+    HOUR_PLURAL: ' Hours'
+    MINUTE_PLURAL: ' Minutes'
+    SECOND_PLURAL: ' Seconds'
 
 LOGGER:
   # Logger Format Settings
@@ -126,6 +168,58 @@ LOGGER:
   SUCCESS_COLOR: '&a'
   ERROR_COLOR: '&c'
 ```
+
+### Rank Expiration Configuration Examples
+
+#### Example 1: Full Time Display (Default)
+```yaml
+RANK_EXPIRY:
+  YEAR: true
+  MONTH: true
+  DAY: true
+  HOUR: true
+  MINUTES: true
+  SECONDS: true
+```
+**Result**: `1 Year 2 Months 5 Days 3 Hours 30 Minutes 15 Seconds`
+
+#### Example 2: Days and Hours Only
+```yaml
+RANK_EXPIRY:
+  YEAR: false
+  MONTH: false
+  DAY: true
+  HOUR: true
+  MINUTES: false
+  SECONDS: false
+```
+**For "1 year 2 months 5 days 3 hours"**  
+**Result**: `430 Days 3 Hours` (365 + 60 + 5 = 430 days)
+
+#### Example 3: Total Hours Display
+```yaml
+RANK_EXPIRY:
+  YEAR: false
+  MONTH: false
+  DAY: false
+  HOUR: true
+  MINUTES: true
+  SECONDS: false
+```
+**For "5 days 3 hours 30 minutes"**  
+**Result**: `123 Hours 30 Minutes` (5×24 + 3 = 123 hours)
+
+#### Example 4: Compact Display
+```yaml
+RANK_EXPIRY:
+  YEAR: true
+  MONTH: true
+  DAY: true
+  HOUR: false
+  MINUTES: false
+  SECONDS: false
+```
+**Result**: `1 Year 2 Months 5 Days`
 
 ### Color Support
 
@@ -150,6 +244,7 @@ scoreboard:
     - "&eDate: &f%extraplaceholders_server_date%"
     - "&eRanked: &f%extraplaceholders_bolt_kit_rule_ranked%"
     - "&eMatch Winner: &f%extraplaceholders_bolt_match_winner%"
+    - "&eRank Expires: &f%extraplaceholders_phoenix_expiration%"
     - "&8&m--------------------"
 ```
 
@@ -160,6 +255,7 @@ header:
   - "&7%extraplaceholders_server_date%"
   - ""
   - "&eStatus: %extraplaceholders_phoenix_status%"
+  - "&eRank: &f%extraplaceholders_phoenix_expiration%"
 ```
 
 ### Chat Reaction Plugin
@@ -168,6 +264,14 @@ placeholders:
   - placeholder: "%extraplaceholders_bolt_kit_rule_sumo%"
     value: "true"
     reaction: "This is a sumo kit!"
+```
+
+### Rank Expiration Display
+```yaml
+# In TAB, scoreboard, or any placeholder-supported plugin
+player_info:
+  - "&eYour rank expires in:"
+  - "&f%extraplaceholders_phoenix_expiration%"
 ```
 
 ## 🔧 Commands
@@ -180,7 +284,7 @@ placeholders:
 
 **Aliases**: `/ep`
 
-## 🏗️ Building from Source
+## 🗃️ Building from Source
 
 ### Prerequisites
 - Java Development Kit (JDK) 21+
@@ -227,4 +331,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [RefineDevelopment](https://refinedev.xyz/) - For Bolt and Phoenix plugins
 - [PlaceholderAPI Team](https://github.com/PlaceholderAPI) - For the excellent placeholder system
 - [j4c0b3y](https://github.com/j4c0b3y) - For CommandAPI and ConfigAPI libraries
+
 ---
