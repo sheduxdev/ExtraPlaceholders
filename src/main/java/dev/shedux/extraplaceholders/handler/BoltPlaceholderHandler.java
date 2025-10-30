@@ -19,13 +19,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Handles Bolt-related placeholders for match and kit information
- * Provides comprehensive match tracking and kit rule validation
- *
- * @author sheduxdev
- * @since 1.0.0
- */
 public final class BoltPlaceholderHandler implements PlaceholderHandler {
 
     private static final String TRUE = "true";
@@ -39,8 +32,8 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
     private static final int MIN_ARGS = 2;
     private static final int COMMAND_INDEX = 1;
     private static final int SUBCOMMAND_INDEX = 2;
-    private static final int KIT_NAME_INDEX = 2;
     private static final int RULE_NAME_INDEX = 3;
+    private static final int SPECIFIC_KIT_NAME_INDEX = 2;
     private static final int SPECIFIC_KIT_RULE_INDEX = 4;
 
     private static Map<String, Function<IKit, Boolean>> kitRules;
@@ -66,14 +59,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         };
     }
 
-    /**
-     * Handles match-related placeholders (winner/loser)
-     *
-     * @param player the player
-     * @param args the placeholder arguments
-     * @param tracker the Bolt tracker
-     * @return formatted match result
-     */
     private String handleMatchPlaceholder(OfflinePlayer player, List<String> args, BoltTracker tracker) {
         if (!hasMinimumArgs(args, 3) || !(player instanceof Player onlinePlayer)) {
             return Configuration.MESSAGES.BOLT_NOT_AVAILABLE;
@@ -88,14 +73,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         };
     }
 
-    /**
-     * Handles kit-related placeholders
-     *
-     * @param player the player
-     * @param args the placeholder arguments
-     * @param tracker the Bolt tracker
-     * @return formatted kit information
-     */
     private String handleKitPlaceholder(OfflinePlayer player, List<String> args, BoltTracker tracker) {
         if (!(player instanceof Player onlinePlayer)) {
             return Configuration.MESSAGES.KIT_DEFAULT;
@@ -122,36 +99,14 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         return null;
     }
 
-    /**
-     * Handles winner placeholder for all match types
-     *
-     * @param player the player
-     * @param tracker the Bolt tracker
-     * @return formatted winner information
-     */
     private String handleMatchWinner(Player player, BoltTracker tracker) {
         return getMatchResult(player, tracker, new WinnerMatchResolver());
     }
 
-    /**
-     * Handles loser placeholder for all match types
-     *
-     * @param player the player
-     * @param tracker the Bolt tracker
-     * @return formatted loser information
-     */
     private String handleMatchLoser(Player player, BoltTracker tracker) {
         return getMatchResult(player, tracker, new LoserMatchResolver());
     }
 
-    /**
-     * Generic method to get match results based on resolver strategy
-     *
-     * @param player the player
-     * @param tracker the Bolt tracker
-     * @param resolver the match result resolver
-     * @return formatted match result
-     */
     private String getMatchResult(Player player, BoltTracker tracker, MatchResultResolver resolver) {
         IMatch match = getPlayerMatch(player, tracker);
 
@@ -179,35 +134,21 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         return Configuration.MESSAGES.BOLT_NOT_AVAILABLE;
     }
 
-    /**
-     * Handles current kit rule checking
-     *
-     * @param args the placeholder arguments
-     * @param currentKit the current kit
-     * @return "true" or "false"
-     */
     private String handleCurrentKitRule(List<String> args, IKit currentKit) {
         if (!hasMinimumArgs(args, 4)) {
-            return null;
+            return FALSE;
         }
 
         String ruleName = args.get(RULE_NAME_INDEX).toLowerCase();
         return checkKitRule(currentKit, ruleName) ? TRUE : FALSE;
     }
 
-    /**
-     * Handles specific kit rule checking
-     *
-     * @param args the placeholder arguments
-     * @param tracker the Bolt tracker
-     * @return "true" or "false"
-     */
     private String handleSpecificKitRule(List<String> args, BoltTracker tracker) {
         if (!hasMinimumArgs(args, 5)) {
-            return null;
+            return FALSE;
         }
 
-        String kitName = args.get(KIT_NAME_INDEX);
+        String kitName = args.get(SPECIFIC_KIT_NAME_INDEX);
         String ruleName = args.get(SPECIFIC_KIT_RULE_INDEX).toLowerCase();
 
         IKit kit = getKitByName(tracker, kitName);
@@ -218,13 +159,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         return checkKitRule(kit, ruleName) ? TRUE : FALSE;
     }
 
-    /**
-     * Checks if a kit has a specific rule enabled
-     *
-     * @param kit the kit to check
-     * @param ruleName the rule name
-     * @return true if rule is enabled
-     */
     private boolean checkKitRule(IKit kit, String ruleName) {
         if (kitRules == null) {
             kitRules = createKitRulesMap();
@@ -235,13 +169,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
                 .orElse(false);
     }
 
-    /**
-     * Gets player's current match safely
-     *
-     * @param player the player
-     * @param tracker the Bolt tracker
-     * @return the match or null
-     */
     private IMatch getPlayerMatch(Player player, BoltTracker tracker) {
         try {
             return tracker.getApi().getMatchAPI().getMatchByPlayer(player);
@@ -250,13 +177,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         }
     }
 
-    /**
-     * Gets kit by name safely
-     *
-     * @param tracker the Bolt tracker
-     * @param kitName the kit name
-     * @return the kit or null
-     */
     private IKit getKitByName(BoltTracker tracker, String kitName) {
         try {
             return tracker.getApi().getKitAPI().getKit(kitName);
@@ -265,72 +185,37 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         }
     }
 
-    /**
-     * Checks if match is in ending state
-     *
-     * @param match the match to check
-     * @return true if match is ending
-     */
     private boolean isMatchEnding(IMatch match) {
         return match != null && match.getState() == MatchState.ENDING;
     }
 
-    /**
-     * Checks if args represent current kit rule check
-     *
-     * @param args the arguments
-     * @return true if checking current kit rule
-     */
     private boolean isCurrentKitRuleCheck(List<String> args) {
         return hasMinimumArgs(args, 3) && RULE_COMMAND.equalsIgnoreCase(args.get(SUBCOMMAND_INDEX));
     }
 
-    /**
-     * Checks if args represent specific kit rule check
-     *
-     * @param args the arguments
-     * @return true if checking specific kit rule
-     */
     private boolean isSpecificKitRuleCheck(List<String> args) {
         return hasMinimumArgs(args, 4) && RULE_COMMAND.equalsIgnoreCase(args.get(RULE_NAME_INDEX));
     }
 
-    /**
-     * Gets player name safely
-     *
-     * @param matchPlayer the match player
-     * @return player name or error message
-     */
     private String getPlayerName(IMatchPlayer matchPlayer) {
         return Optional.ofNullable(matchPlayer.getPlayer())
                 .map(Player::getName)
                 .orElse(Configuration.MESSAGES.BOLT_NOT_AVAILABLE);
     }
 
-    /**
-     * Formats team player names as comma-separated string
-     *
-     * @param team the team
-     * @return formatted player names
-     */
     private String formatTeamNames(IMatchTeam team) {
         List<Player> players = team.getPlayers();
-        if (players.isEmpty()) {
+        if (players == null || players.isEmpty()) {
             return Configuration.MESSAGES.BOLT_NOT_AVAILABLE;
         }
         return players.stream()
+                .filter(Objects::nonNull)
                 .map(Player::getName)
                 .collect(Collectors.joining(", "));
     }
 
-    /**
-     * Formats match player names as comma-separated string
-     *
-     * @param matchPlayers the match players
-     * @return formatted player names
-     */
     private String formatPlayerNames(List<IMatchPlayer> matchPlayers) {
-        if (matchPlayers.isEmpty()) {
+        if (matchPlayers == null || matchPlayers.isEmpty()) {
             return Configuration.MESSAGES.BOLT_NOT_AVAILABLE;
         }
         return matchPlayers.stream()
@@ -340,12 +225,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
                 .collect(Collectors.joining(", "));
     }
 
-    /**
-     * Finds the winner in a solo match
-     *
-     * @param match the match
-     * @return Optional containing the winner
-     */
     private Optional<IMatchPlayer> findWinnerInSolo(IMatch match) {
         for (Player p : match.getPlayers()) {
             IMatchPlayer mp = match.getMatchPlayer(p);
@@ -360,12 +239,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
                 .max(Comparator.comparingInt(IMatchPlayer::getPoints));
     }
 
-    /**
-     * Finds the loser in a solo match
-     *
-     * @param match the match
-     * @return Optional containing the loser
-     */
     private Optional<IMatchPlayer> findLoserInSolo(IMatch match) {
         return findWinnerInSolo(match).flatMap(winner ->
                 match.getPlayers().stream()
@@ -375,12 +248,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         );
     }
 
-    /**
-     * Finds the winner team
-     *
-     * @param match the match
-     * @return Optional containing the winner team
-     */
     private Optional<IMatchTeam> findWinnerTeam(IMatch match) {
         List<IMatchTeam> teams = match.getPlayers().stream()
                 .map(match::getMatchTeam)
@@ -388,8 +255,12 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
                 .distinct()
                 .toList();
 
-        if (teams.size() != 2) {
-            return teams.isEmpty() ? Optional.empty() : Optional.of(teams.get(0));
+        if (teams.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (teams.size() == 1) {
+            return Optional.of(teams.get(0));
         }
 
         IMatchTeam team1 = teams.get(0);
@@ -402,12 +273,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         return Optional.of(team1.getPoints() >= team2.getPoints() ? team1 : team2);
     }
 
-    /**
-     * Finds the loser team
-     *
-     * @param match the match
-     * @return Optional containing the loser team
-     */
     private Optional<IMatchTeam> findLoserTeam(IMatch match) {
         return findWinnerTeam(match).flatMap(winner ->
                 match.getPlayers().stream()
@@ -417,12 +282,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         );
     }
 
-    /**
-     * Finds the winner in an FFA match
-     *
-     * @param match the match
-     * @return Optional containing the winner
-     */
     private Optional<IMatchPlayer> findWinnerInFFA(IMatch match) {
         return match.getPlayers().stream()
                 .map(match::getMatchPlayer)
@@ -435,12 +294,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
                 );
     }
 
-    /**
-     * Finds all losers in an FFA match
-     *
-     * @param match the match
-     * @return list of losers
-     */
     private List<IMatchPlayer> findLosersInFFA(IMatch match) {
         Optional<IMatchPlayer> winner = findWinnerInFFA(match);
         return match.getPlayers().stream()
@@ -449,11 +302,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Creates the kit rules mapping (lazy initialization)
-     *
-     * @return immutable map of rule names to checker functions
-     */
     private static Map<String, Function<IKit, Boolean>> createKitRulesMap() {
         return Map.ofEntries(
                 Map.entry("enabled", IKit::isEnabled),
@@ -500,18 +348,12 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         );
     }
 
-    /**
-     * Strategy interface for resolving match results
-     */
     private interface MatchResultResolver {
         Optional<IMatchPlayer> resolveSolo(IMatch match);
         Optional<IMatchTeam> resolveTeam(IMatch match);
         Optional<String> resolveFFA(IMatch match);
     }
 
-    /**
-     * Resolver for match winners
-     */
     private class WinnerMatchResolver implements MatchResultResolver {
         @Override
         public Optional<IMatchPlayer> resolveSolo(IMatch match) {
@@ -529,9 +371,6 @@ public final class BoltPlaceholderHandler implements PlaceholderHandler {
         }
     }
 
-    /**
-     * Resolver for match losers
-     */
     private class LoserMatchResolver implements MatchResultResolver {
         @Override
         public Optional<IMatchPlayer> resolveSolo(IMatch match) {

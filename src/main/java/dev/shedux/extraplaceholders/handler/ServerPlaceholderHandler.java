@@ -10,13 +10,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Handles server-related placeholders with multi-locale date formatting
- * Supports 30+ locales with customizable date patterns
- *
- * @author sheduxdev
- * @since 1.0.0
- */
 public final class ServerPlaceholderHandler implements PlaceholderHandler {
 
     private static final String DATE_COMMAND = "date";
@@ -38,12 +31,6 @@ public final class ServerPlaceholderHandler implements PlaceholderHandler {
         return null;
     }
 
-    /**
-     * Handles date placeholder requests with optional locale specification
-     *
-     * @param args the placeholder arguments
-     * @return formatted date string
-     */
     private String handleDatePlaceholder(List<String> args) {
         Locale locale = getLocaleFromArgs(args)
                 .orElse(getDefaultLocale());
@@ -51,12 +38,6 @@ public final class ServerPlaceholderHandler implements PlaceholderHandler {
         return formatCurrentDate(locale);
     }
 
-    /**
-     * Extracts locale from arguments if present
-     *
-     * @param args the placeholder arguments
-     * @return Optional containing the Locale if valid
-     */
     private Optional<Locale> getLocaleFromArgs(List<String> args) {
         if (args.size() <= LOCALE_ARG_INDEX) {
             return Optional.empty();
@@ -65,12 +46,6 @@ public final class ServerPlaceholderHandler implements PlaceholderHandler {
         return parseLocale(args.get(LOCALE_ARG_INDEX));
     }
 
-    /**
-     * Parses a locale string to a Locale object
-     *
-     * @param localeInput the locale identifier
-     * @return Optional containing the Locale if valid
-     */
     private Optional<Locale> parseLocale(String localeInput) {
         if (localeInput == null || localeInput.isEmpty()) {
             return Optional.empty();
@@ -80,12 +55,6 @@ public final class ServerPlaceholderHandler implements PlaceholderHandler {
         return Optional.ofNullable(SUPPORTED_LOCALES.get(normalized));
     }
 
-    /**
-     * Formats the current date using the specified locale
-     *
-     * @param locale the locale to use for formatting
-     * @return formatted date string
-     */
     private String formatCurrentDate(Locale locale) {
         try {
             String pattern = Configuration.DATE.DATE_PATTERN;
@@ -96,34 +65,18 @@ public final class ServerPlaceholderHandler implements PlaceholderHandler {
         }
     }
 
-    /**
-     * Gets the default locale from configuration
-     *
-     * @return configured default Locale
-     */
     private Locale getDefaultLocale() {
         String defaultLocale = Configuration.DATE.DEFAULT_LOCALE.toLowerCase();
         return SUPPORTED_LOCALES.getOrDefault(defaultLocale, Locale.US);
     }
 
-    /**
-     * Initializes the map of supported locales
-     * Uses immutable map for thread safety and performance
-     *
-     * @return immutable map of locale identifiers to Locale objects
-     */
     private static Map<String, Locale> initializeSupportedLocales() {
         return Map.ofEntries(
-                // Turkish
                 Map.entry("tr", new Locale("tr", "TR")),
                 Map.entry("tr-tr", new Locale("tr", "TR")),
-
-                // English variants
                 Map.entry("en", Locale.US),
                 Map.entry("en-us", Locale.US),
                 Map.entry("en-gb", Locale.UK),
-
-                // European languages
                 Map.entry("de", Locale.GERMANY),
                 Map.entry("de-de", Locale.GERMANY),
                 Map.entry("fr", Locale.FRANCE),
@@ -139,8 +92,6 @@ public final class ServerPlaceholderHandler implements PlaceholderHandler {
                 Map.entry("nl-nl", new Locale("nl", "NL")),
                 Map.entry("pl", new Locale("pl", "PL")),
                 Map.entry("pl-pl", new Locale("pl", "PL")),
-
-                // Nordic languages
                 Map.entry("sv", new Locale("sv", "SE")),
                 Map.entry("sv-se", new Locale("sv", "SE")),
                 Map.entry("no", new Locale("no", "NO")),
@@ -149,12 +100,8 @@ public final class ServerPlaceholderHandler implements PlaceholderHandler {
                 Map.entry("da-dk", new Locale("da", "DK")),
                 Map.entry("fi", new Locale("fi", "FI")),
                 Map.entry("fi-fi", new Locale("fi", "FI")),
-
-                // Slavic languages
                 Map.entry("ru", new Locale("ru", "RU")),
                 Map.entry("ru-ru", new Locale("ru", "RU")),
-
-                // Asian languages
                 Map.entry("ja", Locale.JAPAN),
                 Map.entry("ja-jp", Locale.JAPAN),
                 Map.entry("zh", Locale.CHINA),
@@ -162,8 +109,6 @@ public final class ServerPlaceholderHandler implements PlaceholderHandler {
                 Map.entry("zh-tw", Locale.TAIWAN),
                 Map.entry("ko", Locale.KOREA),
                 Map.entry("ko-kr", Locale.KOREA),
-
-                // Middle Eastern languages
                 Map.entry("ar", new Locale("ar", "SA")),
                 Map.entry("ar-sa", new Locale("ar", "SA"))
         );

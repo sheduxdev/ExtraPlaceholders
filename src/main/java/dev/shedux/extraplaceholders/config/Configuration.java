@@ -79,17 +79,17 @@ public class Configuration extends StaticConfig {
      * Phoenix status configuration
      */
     public static class PHOENIX {
-        @Comment("Phoenix Status Prefixes")
+        @Comment("Phoenix Status Prefixes - Use LEGACY COLOR CODES for scoreboard compatibility")
         public static String DEFAULT_STATUS = "&f";
-        public static String VANISHED_PREFIX = "<#9e9e9e>[⚗] ";
-        public static String MOD_MODE_PREFIX = "<#ffc430>[⚙] ";
+        public static String VANISHED_PREFIX = "&7[⚗] "; // MiniMessage yerine legacy
+        public static String MOD_MODE_PREFIX = "&6[⚙] "; // MiniMessage yerine legacy
 
         @Comment({
                 "Rank Expiration Messages",
                 "Message shown for permanent ranks"
         })
-        public static String PERMANENT_RANK = "&aPermanent";
-        public static String NO_TIME_REMAINING = "&c0s";
+        public static String PERMANENT_RANK = "&6Never";
+        public static String NO_TIME_REMAINING = "&60s";
 
         /**
          * Rank expiration time unit configuration
@@ -101,28 +101,28 @@ public class Configuration extends StaticConfig {
                     "Example: If YEAR and MONTH are false, a '1 year 5 days' rank becomes '370 days'",
                     "Cascading order: Years -> Months -> Days -> Hours -> Minutes -> Seconds"
             })
-            public static boolean YEAR = true;
-            public static boolean MONTH = true;
+            public static boolean YEAR = false;
+            public static boolean MONTH = false;
             public static boolean DAY = true;
             public static boolean HOUR = true;
             public static boolean MINUTES = true;
-            public static boolean SECONDS = true;
+            public static boolean SECONDS = false;
 
-            @Comment("Singular Time Unit Labels")
-            public static String YEAR_SINGULAR = " Year";
-            public static String MONTH_SINGULAR = " Month";
-            public static String DAY_SINGULAR = " Day";
-            public static String HOUR_SINGULAR = " Hour";
-            public static String MINUTE_SINGULAR = " Minute";
-            public static String SECOND_SINGULAR = " Second";
+            @Comment("Singular Time Unit Labels - Use simple format for scoreboard")
+            public static String YEAR_SINGULAR = "y";
+            public static String MONTH_SINGULAR = "mo";
+            public static String DAY_SINGULAR = "d";
+            public static String HOUR_SINGULAR = "h";
+            public static String MINUTE_SINGULAR = "m";
+            public static String SECOND_SINGULAR = "s";
 
-            @Comment("Plural Time Unit Labels")
-            public static String YEAR_PLURAL = " Years";
-            public static String MONTH_PLURAL = " Months";
-            public static String DAY_PLURAL = " Days";
-            public static String HOUR_PLURAL = " Hours";
-            public static String MINUTE_PLURAL = " Minutes";
-            public static String SECOND_PLURAL = " Seconds";
+            @Comment("Plural Time Unit Labels - Use simple format for scoreboard")
+            public static String YEAR_PLURAL = "y";
+            public static String MONTH_PLURAL = "mo";
+            public static String DAY_PLURAL = "d";
+            public static String HOUR_PLURAL = "h";
+            public static String MINUTE_PLURAL = "m";
+            public static String SECOND_PLURAL = "s";
         }
     }
 
